@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>In-store Demo Page</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+    }
+
+    img, video {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    video {
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="mediaContainer">
+    <!-- Media element will be injected here -->
+  </div>
+
+  <script>
+    const API_URL = 'https://1mg-ba.o-s.io/v2/bsda?client_id=270628&au[]=sc-in-store-ad-server&pt=in-store-pos';
+
+    async function fetchAndDisplayAd() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        const ad = data?.ads?.['sc-in-store-ad-server']?.[0];
+        const container = document.getElementById('mediaContainer');
+        if (!ad || !ad.elements) return;
+
+        // Track impression
+        if (ad.impression_tracking_url) {
+          new Image().src = ad.impression_tracking_url;
+        }
+
+        if (ad.elements.image_link) {
+          const img = new Image();
+          img.style.maxHeight = '100%';
+          img.style.maxWidth = '100%';
+          img.style.objectFit = 'contain';
+          img.onload = () => {
+            container.innerHTML = ''; // Clear only once it's loaded
+            container.appendChild(img);
+          };
+          img.src = ad.elements.image_link;
+        } else if (ad.elements.video_link) {
+          const video = document.createElement('video');
+          video.src = ad.elements.video_link;
+          video.autoplay = true;
+          video.loop = true;
+          video.muted = true;
+          video.playsInline = true;
+          video.style.maxHeight = '100%';
+          video.style.maxWidth = '100%';
+          video.style.objectFit = 'contain';
+
+          // Optional: wait for metadata to load before showing
+          video.onloadeddata = () => {
+            container.innerHTML = '';
+            container.appendChild(video);
+          };
+        }
+      } catch (err) {
+        console.error("Failed to fetch ad:", err);
+      }
+    }
+
+    // Initial call
+    fetchAndDisplayAd();
+    // Refresh every 10 seconds
+    setInterval(fetchAndDisplayAd, 10000);
+  </script>
+</body>
+</html>
