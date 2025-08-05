@@ -39,58 +39,64 @@
   </div>
 
   <script>
-    const API_URL = 'https://1mg-ba.o-s.io/v2/bsda?client_id=270628&au[]=sc-in-store-ad-server&pt=in-store-pos';
-
-    async function fetchAndDisplayAd() {
-      try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-
-        const ad = data?.ads?.['sc-in-store-ad-server']?.[0];
-        const container = document.getElementById('mediaContainer');
-        if (!ad || !ad.elements) return;
-
-        // Track impression
-        if (ad.impression_tracking_url) {
-          new Image().src = ad.impression_tracking_url;
-        }
-
-        if (ad.elements.image_link) {
-          const img = new Image();
-          img.style.maxHeight = '100%';
-          img.style.maxWidth = '100%';
-          img.style.objectFit = 'contain';
-          img.onload = () => {
-            container.innerHTML = ''; // Clear only once it's loaded
-            container.appendChild(img);
-          };
-          img.src = ad.elements.image_link;
-        } else if (ad.elements.video_link) {
-          const video = document.createElement('video');
-          video.src = ad.elements.video_link;
-          video.autoplay = true;
-          video.loop = true;
-          //video.muted = true;
-          video.playsInline = true;
-          video.style.maxHeight = '100%';
-          video.style.maxWidth = '100%';
-          video.style.objectFit = 'contain';
-
-          // Optional: wait for metadata to load before showing
-          video.onloadeddata = () => {
-            container.innerHTML = '';
-            container.appendChild(video);
-          };
-        }
-      } catch (err) {
-        console.error("Failed to fetch ad:", err);
+      // Get 'au' param from URL
+      function getAUParam() {
+        const params = new URLSearchParams(window.location.search);
+        const au = params.get('au');
+        return au || 'sc-in-store-ad-server';
       }
-    }
-
-    // Initial call
-    fetchAndDisplayAd();
-    // Refresh every 10 seconds
-    setInterval(fetchAndDisplayAd, 10000);
-  </script>
+    
+      const AU_PARAM = getAUParam();
+      const API_URL = `https://1mg-ba.o-s.io/v2/bsda?client_id=270628&au[]=${encodeURIComponent(AU_PARAM)}&pt=in-store-pos`;
+    
+      async function fetchAndDisplayAd() {
+        try {
+          const response = await fetch(API_URL);
+          const data = await response.json();
+    
+          const ad = data?.ads?.[AU_PARAM]?.[0];
+          const container = document.getElementById('mediaContainer');
+          if (!ad || !ad.elements) return;
+    
+          // Track impression
+          if (ad.impression_tracking_url) {
+            new Image().src = ad.impression_tracking_url;
+          }
+    
+          if (ad.elements.image_link) {
+            const img = new Image();
+            img.style.maxHeight = '100%';
+            img.style.maxWidth = '100%';
+            img.style.objectFit = 'contain';
+            img.onload = () => {
+              container.innerHTML = ''; // Clear only once it's loaded
+              container.appendChild(img);
+            };
+            img.src = ad.elements.image_link;
+          } else if (ad.elements.video_link) {
+            const video = document.createElement('video');
+            video.src = ad.elements.video_link;
+            video.autoplay = true;
+            video.loop = true;
+            video.playsInline = true;
+            video.style.maxHeight = '100%';
+            video.style.maxWidth = '100%';
+            video.style.objectFit = 'contain';
+    
+            video.onloadeddata = () => {
+              container.innerHTML = '';
+              container.appendChild(video);
+            };
+          }
+        } catch (err) {
+          console.error("Failed to fetch ad:", err);
+        }
+      }
+    
+      // Initial call
+      fetchAndDisplayAd();
+      // Refresh every 10 seconds
+      setInterval(fetchAndDisplayAd, 10000);
+    </script>
 </body>
 </html>
